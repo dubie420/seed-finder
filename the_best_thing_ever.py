@@ -218,46 +218,7 @@ from typing import Dict, List
 import time
 
 BLOCKCHAIN_APIS = {
-    'BTC': {
-        'url': 'https://blockchain.info/rawaddr/{}',
-        'key': None,
-        'backup_url': 'https://api.blockchair.com/bitcoin/dashboards/address/{}'
-    },
-    'ETH': {
-        'url': 'https://api.etherscan.io/api',
-        'key': 'RAUWMRX4JYVQGPB3VN9MCQE6DMXP8ZXHGK'
-    },
-    'BSC': {
-        'url': 'https://api.bscscan.com/api',
-        'key': 'K7QVKN5724PUXUEM8GQWP5TQVKQQ1YE9G'
-    },
-    'MATIC': {
-        'url': 'https://api.polygonscan.com/api',
-        'key': 'XQVB3DXKGVRSZP5FYNK41WUQD8VQWX4MQY'
-    },
-    'AVAX': {
-        'url': 'https://api.snowtrace.io/api',
-        'key': 'WXY5YGPJ2NK8DNRH4DSKQTPB9MBQZ6EUHV'
-    },
-    'FTM': {
-        'url': 'https://api.ftmscan.com/api',
-        'key': 'H8XVKP2RNQZ5YMWG4DBFJ9TUAS6E3QNMC'
-    },
-    'ARBITRUM': {
-        'url': 'https://api.arbiscan.io/api',
-        'key': 'TQNKX5RVDP8MYHW2GBFJ4UEAS9Z6CQMV3'
-    },
-    'OPTIMISM': {
-        'url': 'https://api-optimistic.etherscan.io/api',
-        'key': 'M9RKNX4YPWH2VBQT8GJUE5AS7D3ZCQF6V'
-    },
-    'CRONOS': {
-        'url': 'https://api.cronoscan.com/api',
-        'key': 'VBQT8GJUE5AS7D3ZCQF6VM9RKNX4YPWH2'
-    },
-    'SOLANA': {
-        'url': 'https://api.solscan.io/account/{}',
-        'key': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.solscan.api.key'
+
     }
 }
 
