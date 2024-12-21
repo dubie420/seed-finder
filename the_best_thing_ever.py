@@ -6,6 +6,7 @@ import time
 import queue
 import logging
 import json
+from pandas import qcut
 import requests
 import datetime
 import os
@@ -49,7 +50,82 @@ class WalletFinderGUI:
         self.status_label.pack(pady=10)
         
         self.found_wallets = []
+def __init__(self):
+    self.root = tk.Tk()
+    self.root.title("Blockchain Wallet Finder")
+    self.root.geometry("800x600")
+    
+    self.wallet_processor = WalletProcessor()
+    self.update_queue = queue.Queue()
+    self.running = threading.Event()
+    self.total_checked = 0
+    
+    self.setup_gui()
+    self.setup_logging()
+    
+    # Auto-start the search when GUI launches
+    self.running.set()
+    threading.Thread(target=self.search_wallets, daemon=True).start()
 
+   def update_gui(self):
+        try:
+            while True:
+                func, args = self.update_queue.get_nowait()
+                func(*args)
+        except queue.Empty:
+            pass
+        finally:
+            self.root.after(100, self.update_gui)
+
+    def run(self):
+        self.root.mainloop()
+
+    def setup_gui_components(self):
+        # Single, consolidated setup method
+        self.main_frame = ttk.Frame(self.root, style='Dark.TFrame')
+        self.main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Control buttons
+        self.control_frame = ttk.Frame(self.main_frame)
+        self.control_frame.pack(fill='x', pady=5)
+        
+        self.start_button = ttk.Button(self.control_frame, text="Start Search", command=self.start_search)
+        self.start_button.pack(side='left', padx=5)
+        
+        self.stop_button = ttk.Button(self.control_frame, text="Stop Search", command=self.stop_search)
+        self.stop_button.pack(side='left', padx=5)
+        
+        # Status section
+        self.status_frame = ttk.LabelFrame(self.main_frame, text="Status")
+        self.status_frame.pack(fill='x', pady=5)
+        
+        self.status_var = tk.StringVar(value="Ready")
+        self.status_label = ttk.Label(self.status_frame, textvariable=self.status_var)
+        self.status_label.pack(pady=5)
+        
+        # Create results tree
+        self.create_results_tree()
+        def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Blockchain Wallet Finder")
+        self.root.geometry("800x600")
+        
+        # Initialize components in the correct order
+        self.setup_logging()
+        self.setup_variables()
+        self.setup_gui_components()
+        self.create_menu()
+        self.apply_dark_theme()
+        
+        # Initialize processor
+        self.wallet_processor = WalletProcessor()
+        
+        # Start GUI update loop
+        self.root.after(100, self.update_gui)
+
+if __name__ == "__main__":
+    gui = WalletFinderGUI()
+    gui.root.mainloop()
 def save_wallet(wallet_data):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"found_wallets_{timestamp}.json"
@@ -92,18 +168,20 @@ def generate_and_check_mnemonic(word_list, exclusions, gui):
     gui.root.mainloop()
 
 
-# Load the BIP-39 word list (URL or local file assumed)
 def load_bip39_wordlist():
     url = "https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/english.txt"
     response = requests.get(url)
-    return response.text.splitlines
-    return None
+    word_list = response.text.strip().split('\n')
+    return word_list
 
-# Generate a secure mnemonic excluding specific words
 def generate_mnemonic(word_list, exclusions, word_count=12):
     filtered_word_list = [word for word in word_list if word not in exclusions]
     if len(filtered_word_list) < word_count:
-        raise ValueError("Insufficient words after exclusions for the required mnemonic length.")
+        raise ValueError("Insufficient words after exclusions")
+    
+    mnemonic = [secrets.choice(filtered_word_list) for _ in range(word_count)]
+    return " ".join(mnemonic)
+
                                      
     while True:  # Ensure only valid mnemonics are generated
         mnemonic = [secrets.choice(filtered_word_list) for _ in range(word_count)]
@@ -465,16 +543,7 @@ def print_wallet_info(mnemonic: str, active_wallets: Dict, attempts: int):
 connector = TCPConnector(limit=100, ttl_dns_cache=300)
 session = ClientSession(connector=connector)
 
-DARK_THEME = {
-    'bg': '#2b2b2b',
-    'fg': '#ffffff',
-    'select_bg': '#404040',
-    'tree_bg': '#333333',
-    'button_bg': '#404040',
-    'button_fg': '#ffffff',
-    'menu_bg': '#333333',
-    'menu_fg': '#ffffff'
-}                                                                                                                                        
+                                                                                                                                    
 class NetworkOptimizer:
     def __init__(self):
         self.connector = aiohttp .TCPConnector(limit=0, ttl_dns_cache=300)
@@ -538,116 +607,8 @@ class WalletProcessor:
             'seed': binascii.hexlify(seed).decode('utf-8')
         }
 
-class WalletFinderGUI:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Blockchain Wallet Finder")
-        self.root.geometry("1000x800")
-        
-        # Initialize components
-        self.setup_logging()
-        self.setup_variables()
-        self.setup_gui_components()
-        self.create_menu()
-        
-        # Apply dark theme
-        self.apply_dark_theme()
-        
-        # Initialize processor
-        self.wallet_processor = WalletProcessor()
-        
-        # Start GUI update loop
-        self.root.after(100, self.update_gui)
 
-    def apply_dark_theme(self):
-        self.root.configure(bg=DARK_THEME['bg'])
-        style = ttk.Style()
-        style.configure('Dark.TFrame', background=DARK_THEME['bg'])
-        style.configure('Dark.TLabel', background=DARK_THEME['bg'], foreground=DARK_THEME['fg'])
-        style.configure('Treeview', 
-                       background=DARK_THEME['tree_bg'],
-                       foreground=DARK_THEME['fg'],
-                       fieldbackground=DARK_THEME['tree_bg'])
 
-    def setup_logging(self):
-        logging.basicConfig(
-            filename='wallet_finder.log',
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            datefmt='%H:%M:%S:%f'
-        )
-
-    def setup_variables(self):
-        self.running = threading.Event()
-        self.update_queue = queue.Queue()
-        self.total_checked = 0
-        self.found_wallets = []
-
-    def setup_gui_components(self):
-        self.main_frame = ttk.Frame(self.root, style='Dark.TFrame')
-        self.main_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
-        # Status section
-        self.status_frame = ttk.LabelFrame(self.main_frame, text="Status", style='Dark.TFrame')
-        self.status_frame.pack(fill='x', pady=5)
-        
-        self.status_var = tk.StringVar(value="Ready")
-        self.status_label = ttk.Label(self.status_frame, textvariable=self.status_var)
-        self.status_label.pack(pady=5)
-        
-        # Progress section
-        self.progress_var = tk.StringVar(value="Wallets checked: 0")
-        self.progress_label = ttk.Label(self.main_frame, textvariable=self.progress_var)
-        self.progress_label.pack(pady=5)
-        
-        self.create_results_tree()
-
-    def create_menu(self):
-        menubar = tk.Menu(self.root, bg=DARK_THEME['menu_bg'], fg=DARK_THEME['menu_fg'])
-        self.root.config(menu=menubar)
-        
-        control_menu = tk.Menu(menubar, tearoff=0, bg=DARK_THEME['menu_bg'], fg=DARK_THEME['menu_fg'])
-        menubar.add_cascade(label="Control", menu=control_menu)
-        control_menu.add_command(label="Start", command=self.start_search)
-        control_menu.add_command(label="Stop", command=self.stop_search)
-def setup_gui_components(self):
-   
-    self.control_frame = ttk.Frame(self.main_frame)
-    self.control_frame.pack(fill='x', pady=5)
-    self.start_button = ttk.Button(self.control_frame, text="Start Search", command=self.start_search)
-    self.start_button.pack(side='left', padx=5)
-    
-    self.stop_button = ttk.Button(self.control_frame, text="Stop Search", command=self.stop_search)
-    self.stop_button.pack(side='left', padx=5)
-    
-    # Keep existing components
-    self.status_frame = ttk.LabelFrame(self.main_frame, text="Status", style='Dark.TFrame')
-    self.status_frame.pack(fill='x', pady=5)
-
-    def create_results_tree(self):
-        columns = ("Timestamp", "Address", "Balance", "Status")
-        self.tree = ttk.Treeview(self.main_frame, columns=columns, show='headings')
-        
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=150)
-            
-        scrollbar = ttk.Scrollbar(self.main_frame, orient='vertical', command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        
-        self.tree.pack(side='left', fill='both', expand=True)
-        scrollbar.pack(side='right', fill='y')
-
-    def start_search(self):
-        if not self.running.is_set():
-            self.running.set()
-            threading.Thread(target=self.search_wallets, daemon=True).start()
-            self.status_var.set("Search started...")
-
-    def stop_search(self):
-        if self.running.is_set():
-            self.running.clear()
-            self.status_var.set("Search stopped")
 
     def search_wallets(self):
         with ThreadPoolExecutor(max_workers=16) as executor:
@@ -676,6 +637,53 @@ def setup_gui_components(self):
     def run(self):
         self.root.mainloop()
 
+    def setup_gui_components(self):
+        # Single, consolidated setup method
+        self.main_frame = ttk.Frame(self.root, style='Dark.TFrame')
+        self.main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Control buttons
+        self.control_frame = ttk.Frame(self.main_frame)
+        self.control_frame.pack(fill='x', pady=5)
+        
+        self.start_button = ttk.Button(self.control_frame, text="Start Search", command=self.start_search)
+        self.start_button.pack(side='left', padx=5)
+        
+        self.stop_button = ttk.Button(self.control_frame, text="Stop Search", command=self.stop_search)
+        self.stop_button.pack(side='left', padx=5)
+        
+        # Status section
+        self.status_frame = ttk.LabelFrame(self.main_frame, text="Status")
+        self.status_frame.pack(fill='x', pady=5)
+        
+        self.status_var = tk.StringVar(value="Ready")
+        self.status_label = ttk.Label(self.status_frame, textvariable=self.status_var)
+        self.status_label.pack(pady=5)
+        
+        # Create results tree
+        self.create_results_tree()
+        def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Blockchain Wallet Finder")
+        self.root.geometry("800x600")
+        
+        # Initialize components in the correct order
+        self.setup_logging()
+        self.setup_variables()
+        self.setup_gui_components()
+        self.create_menu()
+        self.apply_dark_theme()
+        
+        # Initialize processor
+        self.wallet_processor = WalletProcessor()
+        
+        # Start GUI update loop
+        self.root.after(100, self.update_gui)
+
 if __name__ == "__main__":
     gui = WalletFinderGUI()
-    gui.root.mainloop()
+    gui.root.mainloop()    \
+ if __name__ == "__main__":
+    gui = WalletFinderGUI()
+    gui.start_search()  # Start searching immediately
+    gui.run()
